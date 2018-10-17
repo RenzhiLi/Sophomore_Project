@@ -14,7 +14,7 @@ users=db.collection(u'User')
 groups=db.collection(u'Group')
 
 def md5(str):
-	#used for passwarf varifacation
+	#used for passward varification
 	hmd5 = hashlib.md5()
 	hmd5.update(str.encode(encoding='utf-8'))
 	return hmd5.hexdigest()
@@ -66,7 +66,7 @@ def user_add(email,pwd,username):
 	#add a new user to database system, passward encrypted.
 	#will reject creation if username already exict(return a string to indicate that)
 	if len(list(users.where(u'User_email','==',email).get()))>=1:
-		return 'Failed: Email already exists'
+		raise EmailAlreadyExist('Failed: Email already exists')
 	user_dict={u'User_email':email,u'User_pwd':md5(pwd),u'User_name':username,u'Last_login':None,u'Is_login':False}
 	return users.add(user_dict)[1]
 
@@ -74,10 +74,10 @@ def user_login(email,pwd):
 	#user login system, return a referance of one user if success
 	#global var account name will be reset to this user id
 	if len(list(users.where(u'User_email','==',email).get()))==0:
-		return 'Failed: Email incorrect'
+		raise EmailIncorrect('Failed: Email incorrect')
 	user=list(users.where(u'User_email', '==', email).get())[0]
 	if user.to_dict()['User_pwd']!= md5(pwd):
-		return 'Failed: Password incorrect'
+		raise PwdIncorrect('Failed: Password incorrect')
 	global __accountname__
 	__accountname__=user.id
 	user=users.document(__accountname__)
@@ -88,7 +88,7 @@ def user_logout():
 	#logout the current logged in account
 	global __accountname__
 	if __accountname__=='':
-		return 'Failed: No account logged'
+		return False
 	user=users.document(__accountname__)
 	user.update({u'Is_login':False})
 	return True
@@ -108,7 +108,7 @@ def user_update(attr,newval,oldval=None):
 	if oldval is None:
 		user.update({attr:newval})
 	elif user.to_dict()['User_pwd']!= md5(oldval):
-		return 'Failed: pwd incorrect'
+		raise PwdIncorrect('Failed: Password incorrect')
 	else:
 		user.update({attr:md5(newval)})
 
@@ -124,6 +124,12 @@ def group_add(name=None,leader=None,party=None):
 		for i in party:
 			tardict['Participants'][user_get(i).id]=True
 	return groups.add(tardict)[1]
+
+def group_member_add():
+	
+
+
+
 
 
 
@@ -147,4 +153,9 @@ for i in temp.collection(u'Subtasks').get():
 	print(i.to_dict())
 for i in task.where(u'Task_leader','==','renzhili@oakland.edu').get():
 	print(i.id)
+
+try:
+	user_login('renzhili@oakland.edu','123456')
+except:
+	print('email or passward incorrect')
 '''
