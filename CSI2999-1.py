@@ -19,7 +19,7 @@ def md5(str):
 	hmd5.update(str.encode(encoding='utf-8'))
 	return hmd5.hexdigest()
 
-def task_add(Task_name,Time_due,Task_discr=None,groupid=None,Task_prior=1,Task_leader=__accountname__,Task_parti=None,Time_accom=None,Time_Es=datetime.datetime.utcnow(),Is_accom=False,Has_subtask=False,maintask=None):
+def task_add(Task_name,Time_due,Task_discr=None,groupid=None,Task_prior=1,progress=0,Task_leader=__accountname__,Task_parti=None,Time_accom=None,Time_Es=datetime.datetime.utcnow(),Is_accom=False,Has_subtask=False,maintask=None):
 	# add a new task to database,could add a sub-task to one existing task
 	# sample use: (return value is a doc instance)
 	# a=task_add(u'tasknumber3',datetime.datetime(2018,10,22,22,22,0),u'discription3',[maintask='QmfuMOqiib23OOd9g8vy'])
@@ -30,7 +30,7 @@ def task_add(Task_name,Time_due,Task_discr=None,groupid=None,Task_prior=1,Task_l
 		u'Task_leader': Task_leader, u'Task_parti': Task_parti,
 		u'Time_accom': Time_accom, u'Time_Es': Time_Es,
 		u'Is_accom': Is_accom, u'Has_subtask': Has_subtask,
-		u'Group_id':groupid
+		u'group':groupid, u'progress':progress
 	}
 	if maintask==None:
 		return task.add(taskdict)[1]
@@ -125,8 +125,34 @@ def group_add(name=None,leader=None,party=None):
 			tardict['Participants'][user_get(i).id]=True
 	return groups.add(tardict)[1]
 
-def group_member_add():
-	
+def group_update(group,field_name,filed_value):
+	if type(group)==str:
+		tar=groups.document(group)
+		tar.update({field_name:filed_value})
+	else:
+		group.update({field_name:filed_value})
+
+def group_get(tag):
+	#obtain a group instance by name
+	#should have a more powerful verion in the frontend that could get groups by any participants
+	if len(list(groups.where(u'Name', '==', tag).get())) != 0:
+		return groups.document(list(groups.where(u'Name', '==', tag).get())[0].id)
+
+def group_member_add(group,user_id):
+	#group para could accept id/instance, must past a user_id
+	if type(group) == str:
+		thisgroup=groups.document(group)
+		thisgroup.update({'Participants.'+user_id:True})
+	else:
+		group.update({'Participants.'+user_id:True})
+
+def group_member_del(group,user_id):
+	#group para could accept id/instance, must past a user_id
+	if type(group) == str:
+		thisgroup=groups.document(group)
+		thisgroup.update({'Participants.'+user_id:firestore.DELETE_FIELD})
+	else:
+		group.update({'Participants.'+user_id:firestore.DELETE_FIELD})
 
 
 
